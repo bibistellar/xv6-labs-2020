@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -94,4 +95,37 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64 sys_trace(void){
+  int mask;
+  struct proc *p;
+  p = myproc();
+  if(argint(0,&mask)<0){
+    return -1;
+  }
+  p->mask = mask;
+  return 0;
+}
+
+uint64 sys_sysinfo(void){
+  struct sysinfo q;
+  struct proc *p;
+  uint64 info_addr;
+  p = myproc();
+
+  if(argaddr(0,&info_addr)<0){
+    return -1;
+  }
+
+  //计算剩余的内存空间
+  q.freemem = FreeMemCount()*4096;
+  q.nproc = UnusedProcCount();
+  q.freefd = FreeFdCount();
+
+  if(copyout(p->pagetable,info_addr,(char*)&q,sizeof(q))<0){
+    return -1;
+  }
+
+  return 0;
 }

@@ -295,6 +295,8 @@ fork(void)
 
   np->state = RUNNABLE;
 
+  np->mask = p->mask;
+
   release(&np->lock);
 
   return pid;
@@ -692,4 +694,30 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64 UnusedProcCount(void){
+  uint64 count = 0;
+  struct proc *p;
+  for(p = proc;p < &proc[NPROC];p++){
+    acquire(&p->lock);
+    if(p->state == UNUSED){
+      count = count + 1;
+    }
+    release(&p->lock);
+  }
+  return count;
+}
+
+uint64 FreeFdCount(void){
+  uint64 count = 0;
+  struct proc *p;
+  p = myproc();
+  int i;
+  for(i = 0; i < NOFILE; i++){
+    if(!p->ofile[i]){
+      count = count + 1;
+    }
+  }
+  return count;
 }
